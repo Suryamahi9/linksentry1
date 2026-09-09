@@ -1,0 +1,160 @@
+// LinkSentry — Prisma schema (Stages 3-6)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+// ── Auth.js tables (required) ──────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("user") // user | admin
+  accounts      Account[]
+  sessions      Session[]
+  apiKeys       ApiKey[]
+  reports       Report[]
+  reportVotes   ReportVote[]
+  bulkJobs      BulkJob[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── Stage 3: Bulk scan ─────────────────────────────────────
+model BulkJob {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String   @default("queued") // queued | processing | done | failed
+  total       Int
+  completed   Int      @default(0)
+  urls        String[] // stored as text array
+  results     Json?    // ScanResult[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ── Stage 4: Community reporting ───────────────────────────
+model Report {
+  id         String       @id @default(cuid())
+  url        String
+  domain     String
+  category   String // phishing | malware | scam | spam-ad | other
+  reason     String?      @db.Text
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  votes      ReportVote[]
+  status     String       @default("open") // open | blocklisted | dismissed
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([domain])
+  @@index([status])
+}
+
+model ReportVote {
+  id       String @id @default(cuid())
+  reportId String
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, userId])
+}
+
+model CommunityBlocklist {
+  id        String   @id @default(cuid())
+  domain    String   @unique
+  sourceUrl String?
+  addedAt   DateTime @default(now())
+  votes     Int      @default(5)
+}
+
+model DomainOverride {
+  id        String   @id @default(cuid())
+  domain    String   @unique
+  action    String // allow | block
+  reason    String?  @db.Text
+  createdBy String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  target    String
+  detail    String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+}
+
+// ── Stage 5: Developer API ─────────────────────────────────
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String    @unique // sha256 of the raw key
+  prefix     String // first 8 chars, shown in UI
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([userId])
+}
+
+// ── Stage 6: Analytics (derived, but store daily rollups) ──
+model ScanEvent {
+  id        String   @id @default(cuid())
+  domain    String
+  verdict   String // safe | suspicious | malicious
+  score     Int
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([verdict])
+}

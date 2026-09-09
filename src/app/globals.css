@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+:root {
+  --ink: #0A0E14;
+  --ink-lighter: #12161E;
+  --ink-border: #1E2330;
+  --phosphor: #4FE8C4;
+  --phosphor-dim: #2A8A72;
+  --phosphor-glow: #4FE8C440;
+  --amber: #F5A623;
+  --amber-dim: #8B6013;
+  --danger: #E4573D;
+  --danger-dim: #7A2E20;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--ink);
+  color: #E8E8E8;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code,
+.font-mono {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ink-lighter);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ink-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3040;
+}
+
+/* Scan animation */
+@keyframes scan-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-scan-pulse {
+  animation: scan-pulse 1.5s ease-in-out infinite;
+}
+
+/* Hairline border utility */
+.hairline-border {
+  border: 1px solid var(--ink-border);
+}
+
+.hairline-border-top {
+  border-top: 1px solid var(--ink-border);
+}
+
+.hairline-border-bottom {
+  border-bottom: 1px solid var(--ink-border);
+}
+
+@keyframes score-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-score-in {
+  animation: score-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
