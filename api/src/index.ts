@@ -8,8 +8,11 @@ import { apiKeyRoutes } from "./routes/keys.js";
 import { adminRoutes } from "./routes/admin.js";
 import { initCache, getBullRedis } from "./utils/cache.js";
 
+console.log("[boot] index.ts loaded — initializing cache");
+
 // Initialize optional Redis cache (graceful if Redis is absent)
 await initCache();
+console.log("[boot] cache init complete");
 
 const app = Fastify({
   logger: {
@@ -91,8 +94,13 @@ try {
 }
 
 // Start server
-const PORT = parseInt(process.env.API_PORT || "3001", 10);
+// Vercel Fluid Compute injects PORT for the internal server socket — honor it
+// so the runtime can route requests to this process. API_PORT/3001 are fallbacks
+// for local development.
+const PORT = parseInt(process.env.PORT || process.env.API_PORT || "3001", 10);
 const HOST = process.env.API_HOST || "0.0.0.0";
+
+console.log(`[boot] starting fastify on ${HOST}:${PORT}`);
 
 try {
   await app.listen({ port: PORT, host: HOST });
